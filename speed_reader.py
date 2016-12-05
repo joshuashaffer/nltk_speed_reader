@@ -17,7 +17,6 @@ Split_Word = namedtuple('Split_Word', ['start', 'mid', 'end'])
 Label_Change_Message = namedtuple('Label_Change_Message',
                                   ['label_start', 'sentence_iterator', 'word_iterator', 'default_delay',
                                    'noun_delay_multiplier', 'verb_delay_multiplier'])
-uncode_punctuation = ''.join([chr(i) for i in range(sys.maxunicode) if unicodedata.category(chr(i)).startswith('P')])
 event_timer = QtCore.QTimer()
 
 word_width = 28
@@ -33,13 +32,15 @@ def static_vars(**kwargs):
     return decorate
 
 
+@static_vars(
+    uncode_punctuation=''.join([chr(i) for i in range(sys.maxunicode) if unicodedata.category(chr(i)).startswith('P')]))
 def iterate_sentences(file):
     with open(file, 'r') as fid:
         raw_test = fid.read()
     tokenizer = nltk.TweetTokenizer(reduce_len=True)
     sentences = nltk.sent_tokenize(raw_test)
     for sentence in sentences:
-        s = re.sub("[^0-9a-zA-Z \n-?!.:" + uncode_punctuation + "]+", '', sentence).strip()
+        s = re.sub("[^0-9a-zA-Z \n-?!.:" + iterate_sentences.uncode_punctuation + "]+", '', sentence).strip()
         yield map(lambda x: Labeled_Word(*x), nltk.pos_tag(tokenizer.tokenize(s)))
 
 
