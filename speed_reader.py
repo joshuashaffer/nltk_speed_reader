@@ -6,6 +6,7 @@ import itertools
 import unicodedata
 from functools import namedtuple
 
+from typing import List, Generator, Iterator
 import climate
 from PyQt5.QtWidgets import QApplication, QLabel
 from PyQt5 import QtCore, QtWidgets
@@ -32,7 +33,7 @@ def static_vars(**kwargs):
 
 @static_vars(
     uncode_punctuation=''.join([chr(i) for i in range(sys.maxunicode) if unicodedata.category(chr(i)).startswith('P')]))
-def iterate_sentences(file):
+def iterate_sentences(file: str) -> Generator[Iterator[Labeled_Word], None, None]:
     with open(file, 'r') as fid:
         raw_test = fid.read()
     tokenizer = nltk.TweetTokenizer(reduce_len=True)
@@ -43,7 +44,7 @@ def iterate_sentences(file):
 
 
 @static_vars(hypenizer=pyphen.Pyphen(lang='en_US'))
-def hypenize(word_particle_list):
+def hypenize(word_particle_list: List[Labeled_Word]) -> Generator[Labeled_Word, None, None]:
     for word_particle in word_particle_list:
         if len(word_particle[0]) > word_width:
             temp_word = word_particle.text
@@ -57,11 +58,11 @@ def hypenize(word_particle_list):
             yield word_particle
 
 
-def wpm_to_ms(words_per_min):
-    return 1.0 / ((words_per_min / 60.0) * (1.0 / 1000.0))
+def wpm_to_ms(words_per_min: int) -> int:
+    return int(1.0 / ((words_per_min / 60.0) * (1.0 / 1000.0)))
 
 
-def split_word(word):
+def split_word(word: str) -> Split_Word:
     mid = len(word) // 2
     split_point = mid
     for idx in range(mid, mid // 2, -1):
@@ -74,9 +75,10 @@ def split_word(word):
     return Split_Word(word_start, word_mid, word_end)
 
 
-def update_label(args):
+def update_label(args: Label_Change_Message) -> None:
     word = next_word(args.sentence_iterator, args.word_iterator)
     if word is None:
+        # End of document.
         sys.exit(0)
 
     color_start = 'black'
@@ -118,7 +120,8 @@ def update_label(args):
     args.event_timer.setInterval(int(next_delay))
 
 
-def next_word(sentence_iter, word_iter):
+def next_word(sentence_iter: Generator[Iterator[Labeled_Word], None, None],
+              word_iter: Generator[Labeled_Word, None, None]):
     word = None
     try:
         word = next(word_iter)
@@ -137,7 +140,7 @@ def next_word(sentence_iter, word_iter):
     noun_delay=('Noun delay multiplier', 'option', None, float),
     verb_delay=('Verb delay multiplier', 'option', None, float)
 )
-def speed_reader_main(text_file, wpm, noun_delay=2.0, verb_delay=2.0):
+def speed_reader_main(text_file: str, wpm: int, noun_delay: float=2.0, verb_delay: float=2.0):
     sentence_iter, sentence_iter_orig = itertools.tee(iterate_sentences(text_file))
     word_iter = hypenize(next(sentence_iter))
 
