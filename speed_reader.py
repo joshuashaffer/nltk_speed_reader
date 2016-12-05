@@ -46,8 +46,8 @@ def hypenize(word_particle_list):
             yield word_particle
 
 
-def wpm_to_ms(words_per_second):
-    return 1.0 / ((words_per_second / 60.0) * (1.0 / 1000.0))
+def wpm_to_ms(words_per_min):
+    return 1.0 / ((words_per_min / 60.0) * (1.0 / 1000.0))
 
 
 def split_word(word):
@@ -89,11 +89,11 @@ def update_label(label_start):
     if word[1] == 'NN' or word[1] == 'NNP' or word[1] == 'PRP':
         # Nouns or preps.
         rword = rword.capitalize()
-        next_delay *= 2.0
+        next_delay *= noun_delay_multiplier
     elif word[1] == 'VB':
         # main verbs
         rword = rword.upper()
-        next_delay *= 2.0
+        next_delay *= verb_delay_multiplier
 
     sword = split_word(rword)
     new_label_start = label_template_start.format(sword[0])
