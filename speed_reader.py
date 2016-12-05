@@ -3,6 +3,7 @@ import sys
 import re
 import signal
 import itertools
+from functools import namedtuple
 
 import climate
 from PyQt5.QtWidgets import QApplication, QLabel
@@ -10,14 +11,13 @@ from PyQt5 import QtCore, QtWidgets
 import nltk
 import pyphen
 
+Labeled_Word = namedtuple('Labeled_Word', ['text', 'part_of_speech'])
+
 event_timer = QtCore.QTimer()
 sentence_iter = None
 word_iter = None
 
-default_delay = 1000
 word_width = 28
-verb_delay_multiplier = 2.0
-noun_delay_multiplier = 2.0
 mid_width = word_width // 2
 hypenizer = pyphen.Pyphen(lang='en_US')
 
@@ -63,7 +63,7 @@ def split_word(word):
     return word_start, word_mid, word_end
 
 
-def update_label(label_start):
+def update_label(label_start, default_delay, noun_delay_multiplier, verb_delay_multiplier):
     word = next_word()
     if word is None:
         sys.exit(0)
@@ -127,12 +127,6 @@ def next_word():
 def speed_reader_main(text_file, wpm, noun_delay=2.0, verb_delay=2.0):
     global sentence_iter
     global word_iter
-    global default_delay
-    global verb_delay_multiplier
-    global noun_delay_multiplier
-
-    noun_delay_multiplier = noun_delay
-    verb_delay_multiplier = verb_delay
 
     sentence_iter, sentence_iter_orig = itertools.tee(iterate_sentences(text_file))
     sentence_iter_orig, sentence_count_iter = itertools.tee(sentence_iter_orig)
@@ -143,8 +137,8 @@ def speed_reader_main(text_file, wpm, noun_delay=2.0, verb_delay=2.0):
     app = QApplication(sys.argv)
     window = QtWidgets.QMainWindow()
     lmainFirst = QLabel()
-    event_timer.timeout.connect(lambda: update_label(lmainFirst))
     default_delay = wpm_to_ms(wpm)
+    event_timer.timeout.connect(lambda: update_label(lmainFirst, default_delay, noun_delay, verb_delay))
     event_timer.start(1000)
 
     window.setCentralWidget(lmainFirst)
