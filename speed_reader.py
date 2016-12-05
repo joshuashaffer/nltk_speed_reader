@@ -4,20 +4,24 @@ import re
 import signal
 import itertools
 import unicodedata
-from functools import namedtuple
 
-from typing import List, Generator, Iterator
+from typing import List, Generator, Iterator, NamedTuple
 import climate
 from PyQt5.QtWidgets import QApplication, QLabel
 from PyQt5 import QtCore, QtWidgets
 import nltk
 import pyphen
 
-Labeled_Word = namedtuple('Labeled_Word', ['text', 'part_of_speech'])
-Split_Word = namedtuple('Split_Word', ['start', 'mid', 'end'])
-Label_Change_Message = namedtuple('Label_Change_Message',
-                                  ['label_start', 'sentence_iterator', 'word_iterator', 'default_delay',
-                                   'noun_delay_multiplier', 'verb_delay_multiplier', 'event_timer'])
+Labeled_Word = NamedTuple('Labeled_Word', [('text', str), ('part_of_speech', str)])
+Split_Word = NamedTuple('Split_Word', [('start', str), ('mid', str), ('end', str)])
+Label_Change_Message = NamedTuple('Label_Change_Message',
+                                  [('label_start', QLabel),
+                                   ('sentence_iterator', Generator[Iterator[Labeled_Word], None, None]),
+                                   ('word_iterator', Generator[Labeled_Word, None, None]),
+                                   ('default_delay', int),
+                                   ('noun_delay_multiplier', float),
+                                   ('verb_delay_multiplier', float),
+                                   ('event_timer', QtCore.QTimer)])
 word_width = 28
 mid_width = word_width // 2
 
