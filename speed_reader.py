@@ -15,14 +15,19 @@ import pyphen
 Labeled_Word = namedtuple('Labeled_Word', ['text', 'part_of_speech'])
 Split_Word = namedtuple('Split_Word', ['start', 'mid', 'end'])
 uncode_punctuation = ''.join([chr(i) for i in range(sys.maxunicode) if unicodedata.category(chr(i)).startswith('P')])
-
 event_timer = QtCore.QTimer()
-sentence_iter = None
-word_iter = None
 
 word_width = 28
 mid_width = word_width // 2
-hypenizer = pyphen.Pyphen(lang='en_US')
+
+
+def static_vars(**kwargs):
+    def decorate(func):
+        for k in kwargs:
+            setattr(func, k, kwargs[k])
+        return func
+
+    return decorate
 
 
 def iterate_sentences(file):
@@ -35,13 +40,15 @@ def iterate_sentences(file):
         yield map(lambda x: Labeled_Word(*x), nltk.pos_tag(tokenizer.tokenize(s)))
 
 
+@static_vars(hypenizer=pyphen.Pyphen(lang='en_US'))
 def hypenize(word_particle_list):
+    hypenize.hypenizer.positions('hello')
     for word_particle in word_particle_list:
         if len(word_particle[0]) > word_width:
             temp_word = word_particle.text
             # Split closest to the middle of the word
             idx_split = min(map(lambda x: (x[0], abs((len(temp_word) / 2.0 - x[1])), x[1]),
-                                enumerate(hypenizer.positions(temp_word))),
+                                enumerate(hypenize.hypenizer.positions(temp_word))),
                             key=lambda x: x[1])[2]
             yield Labeled_Word(temp_word[:idx_split] + '-', word_particle.part_of_speech)
             yield Labeled_Word(temp_word[idx_split:], word_particle.part_of_speech)
@@ -66,8 +73,9 @@ def split_word(word):
     return Split_Word(word_start, word_mid, word_end)
 
 
-def update_label(label_start, default_delay, noun_delay_multiplier, verb_delay_multiplier):
-    word = next_word()
+def update_label(label_start, sentence_iterator, word_iterator, default_delay, noun_delay_multiplier,
+                 verb_delay_multiplier):
+    word = next_word(sentence_iterator, word_iterator)
     if word is None:
         sys.exit(0)
 
@@ -110,9 +118,7 @@ def update_label(label_start, default_delay, noun_delay_multiplier, verb_delay_m
     event_timer.setInterval(int(next_delay))
 
 
-def next_word():
-    global sentence_iter
-    global word_iter
+def next_word(sentence_iter, word_iter):
     word = None
     try:
         word = next(word_iter)
@@ -132,20 +138,15 @@ def next_word():
     verb_delay=('Verb delay multiplier', 'option', None, float)
 )
 def speed_reader_main(text_file, wpm, noun_delay=2.0, verb_delay=2.0):
-    global sentence_iter
-    global word_iter
-
     sentence_iter, sentence_iter_orig = itertools.tee(iterate_sentences(text_file))
-    sentence_iter_orig, sentence_count_iter = itertools.tee(sentence_iter_orig)
-    # sentence_count = sum(sum(b[1] == 'VB' for b in a) for a in sentence_count_iter)
-    # print("{} Sentences".format(sentence_coun))
     word_iter = hypenize(next(sentence_iter))
 
     app = QApplication(sys.argv)
     window = QtWidgets.QMainWindow()
     lmainFirst = QLabel()
     default_delay = wpm_to_ms(wpm)
-    event_timer.timeout.connect(lambda: update_label(lmainFirst, default_delay, noun_delay, verb_delay))
+    event_timer.timeout.connect(
+        lambda: update_label(lmainFirst, sentence_iter, word_iter, default_delay, noun_delay, verb_delay))
     event_timer.start(1000)
 
     window.setCentralWidget(lmainFirst)
