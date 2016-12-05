@@ -2,6 +2,7 @@
 import sys
 import re
 import signal
+import itertools
 
 import climate
 from PyQt5.QtWidgets import QApplication, QLabel
@@ -17,7 +18,7 @@ default_delay = 1000
 word_width = 28
 verb_delay_multiplier = 2.0
 noun_delay_multiplier = 2.0
-mid_width = int(round(word_width / 2))
+mid_width = word_width // 2
 hypenizer = pyphen.Pyphen(lang='en_US')
 
 
@@ -50,9 +51,9 @@ def wpm_to_ms(words_per_min):
 
 
 def split_word(word):
-    mid = int(round(len(word) / 2))
+    mid = len(word) // 2
     split_point = mid
-    for idx in range(mid, int(round(mid / 2)), -1):
+    for idx in range(mid, mid // 2, -1):
         if word[idx] in list('aeuioöäüAEUIOÖÄÜ'):
             split_point = idx
             break
@@ -133,7 +134,10 @@ def speed_reader_main(text_file, wpm, noun_delay=2.0, verb_delay=2.0):
     noun_delay_multiplier = noun_delay
     verb_delay_multiplier = verb_delay
 
-    sentence_iter = iterate_sentences(text_file)
+    sentence_iter, sentence_iter_orig = itertools.tee(iterate_sentences(text_file))
+    sentence_iter_orig, sentence_count_iter = itertools.tee(sentence_iter_orig)
+    # sentence_count = sum(sum(b[1] == 'VB' for b in a) for a in sentence_count_iter)
+    # print("{} Sentences".format(sentence_coun))
     word_iter = hypenize(next(sentence_iter))
 
     app = QApplication(sys.argv)
@@ -151,5 +155,4 @@ def speed_reader_main(text_file, wpm, noun_delay=2.0, verb_delay=2.0):
 
 
 if __name__ == '__main__':
-    # IPython.embed()
     climate.call(speed_reader_main)
