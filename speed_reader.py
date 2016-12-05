@@ -12,6 +12,7 @@ import nltk
 import pyphen
 
 Labeled_Word = namedtuple('Labeled_Word', ['text', 'part_of_speech'])
+Split_Word = namedtuple('Split_Word', ['start', 'mid', 'end'])
 
 event_timer = QtCore.QTimer()
 sentence_iter = None
@@ -60,7 +61,7 @@ def split_word(word):
     word_start = str(word[:split_point]).rjust(mid_width).replace(' ', '&nbsp;')
     word_mid = word[split_point]
     word_end = str(word[split_point + 1:]).ljust(mid_width - 1).replace(' ', '&nbsp;')
-    return word_start, word_mid, word_end
+    return Split_Word(word_start, word_mid, word_end)
 
 
 def update_label(label_start, default_delay, noun_delay_multiplier, verb_delay_multiplier):
@@ -71,11 +72,14 @@ def update_label(label_start, default_delay, noun_delay_multiplier, verb_delay_m
     color_start = 'black'
     color_mid = '#ae01ae'
     color_end = 'black'
-    label_template_start = """<span style='font-size:24px;font-size:20vw; font-weight:600; color:{}; font-family: monospace;'>{{}}</span>
+    label_template_start = """
+    <span style='font-size:24px;font-size:20vw; font-weight:600; color:{}; font-family: monospace;'>{{}}</span>
         """.format(color_start)
-    label_template_mid = """ <span style='font-size:24px;font-size:20vw; font-weight:600; color:{};font-family: monospace;'>{{}}</span>""".format(
+    label_template_mid = """
+    <span style='font-size:24px;font-size:20vw; font-weight:600; color:{};font-family: monospace;'>{{}}</span>""".format(
         color_mid)
-    label_template_end = """ <span style='font-size:24px;font-size:20vw; font-weight:600; color:{};font-family: monospace;'>{{}}</span> """.format(
+    label_template_end = """
+    <span style='font-size:24px;font-size:20vw; font-weight:600; color:{};font-family: monospace;'>{{}}</span> """.format(
         color_end)
     rword = re.sub('[^0-9a-zA-Z-]+', '', word.text).strip().lower()
     if rword == '':
@@ -98,10 +102,9 @@ def update_label(label_start, default_delay, noun_delay_multiplier, verb_delay_m
         next_delay *= verb_delay_multiplier
 
     sword = split_word(rword)
-    new_label_start = label_template_start.format(sword[0])
-    new_label_mid = label_template_mid.format(sword[1])
-    new_label_end = label_template_end.format(sword[2])
-    label_start.setText(new_label_start + new_label_mid + new_label_end)
+    label_start.setText(label_template_start.format(sword.start) +
+                        label_template_mid.format(sword.mid) +
+                        label_template_end.format(sword.end))
     event_timer.setInterval(int(next_delay))
 
 
