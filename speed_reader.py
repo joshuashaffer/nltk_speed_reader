@@ -14,6 +14,9 @@ import pyphen
 
 Labeled_Word = namedtuple('Labeled_Word', ['text', 'part_of_speech'])
 Split_Word = namedtuple('Split_Word', ['start', 'mid', 'end'])
+Label_Change_Message = namedtuple('Label_Change_Message',
+                                  ['label_start', 'sentence_iterator', 'word_iterator', 'default_delay',
+                                   'noun_delay_multiplier', 'verb_delay_multiplier'])
 uncode_punctuation = ''.join([chr(i) for i in range(sys.maxunicode) if unicodedata.category(chr(i)).startswith('P')])
 event_timer = QtCore.QTimer()
 
@@ -73,9 +76,8 @@ def split_word(word):
     return Split_Word(word_start, word_mid, word_end)
 
 
-def update_label(label_start, sentence_iterator, word_iterator, default_delay, noun_delay_multiplier,
-                 verb_delay_multiplier):
-    word = next_word(sentence_iterator, word_iterator)
+def update_label(args):
+    word = next_word(args.sentence_iterator, args.word_iterator)
     if word is None:
         sys.exit(0)
 
@@ -94,27 +96,27 @@ def update_label(label_start, sentence_iterator, word_iterator, default_delay, n
     rword = re.sub('[^0-9a-zA-Z-]+', '', word.text).strip().lower()
     if rword == '':
         # Punctuation mark
-        event_timer.setInterval(default_delay * 1.5)
+        event_timer.setInterval(args.default_delay * 1.5)
         return
 
-    next_delay = default_delay
+    next_delay = args.default_delay
     if len(rword) > 6:
-        next_delay = (default_delay / 2.0) * (len(rword) - 6)
+        next_delay = (args.default_delay / 2.0) * (len(rword) - 6)
 
     word_part = word.part_of_speech
     if word_part == 'NN' or word_part == 'NNP' or word_part == 'PRP':
         # Nouns or preps.
         rword = rword.capitalize()
-        next_delay *= noun_delay_multiplier
+        next_delay *= args.noun_delay_multiplier
     elif word_part == 'VB':
         # main verbs
         rword = rword.upper()
-        next_delay *= verb_delay_multiplier
+        next_delay *= args.verb_delay_multiplier
 
     sword = split_word(rword)
-    label_start.setText(label_template_start.format(sword.start) +
-                        label_template_mid.format(sword.mid) +
-                        label_template_end.format(sword.end))
+    args.label_start.setText(label_template_start.format(sword.start) +
+                             label_template_mid.format(sword.mid) +
+                             label_template_end.format(sword.end))
     event_timer.setInterval(int(next_delay))
 
 
@@ -146,7 +148,8 @@ def speed_reader_main(text_file, wpm, noun_delay=2.0, verb_delay=2.0):
     lmainFirst = QLabel()
     default_delay = wpm_to_ms(wpm)
     event_timer.timeout.connect(
-        lambda: update_label(lmainFirst, sentence_iter, word_iter, default_delay, noun_delay, verb_delay))
+        lambda: update_label(
+            Label_Change_Message(lmainFirst, sentence_iter, word_iter, default_delay, noun_delay, verb_delay)))
     event_timer.start(1000)
 
     window.setCentralWidget(lmainFirst)
