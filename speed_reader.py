@@ -147,15 +147,15 @@ def speed_reader_main(text_file: str, wpm: int, noun_delay: float=2.0, verb_dela
     app = QApplication(sys.argv)
     event_timer = QtCore.QTimer()
     window = QtWidgets.QMainWindow()
-    lmainFirst = QLabel()
+    main_label = QLabel()
     default_delay = wpm_to_ms(wpm)
     event_timer.timeout.connect(
         lambda: update_label(
-            Label_Change_Message(lmainFirst, sentence_iter, word_iter, default_delay, noun_delay, verb_delay,
+            Label_Change_Message(main_label, sentence_iter, word_iter, default_delay, noun_delay, verb_delay,
                                  event_timer)))
     event_timer.start(1000)
 
-    window.setCentralWidget(lmainFirst)
+    window.setCentralWidget(main_label)
     window.setMinimumWidth(500)
     window.show()
     signal.signal(signal.SIGINT, signal.SIG_DFL)
