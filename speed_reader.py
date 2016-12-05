@@ -1,14 +1,13 @@
 #!/usr/bin/python3
 import sys
 import re
+import signal
 
 import climate
 from PyQt5.QtWidgets import QApplication, QLabel
 from PyQt5 import QtCore, QtWidgets
 import nltk
 import pyphen
-import signal
-
 
 event_timer = QtCore.QTimer()
 sentence_iter = None
