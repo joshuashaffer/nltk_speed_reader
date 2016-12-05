@@ -16,9 +16,7 @@ Labeled_Word = namedtuple('Labeled_Word', ['text', 'part_of_speech'])
 Split_Word = namedtuple('Split_Word', ['start', 'mid', 'end'])
 Label_Change_Message = namedtuple('Label_Change_Message',
                                   ['label_start', 'sentence_iterator', 'word_iterator', 'default_delay',
-                                   'noun_delay_multiplier', 'verb_delay_multiplier'])
-event_timer = QtCore.QTimer()
-
+                                   'noun_delay_multiplier', 'verb_delay_multiplier', 'event_timer'])
 word_width = 28
 mid_width = word_width // 2
 
@@ -96,7 +94,7 @@ def update_label(args):
     rword = re.sub('[^0-9a-zA-Z-]+', '', word.text).strip().lower()
     if rword == '':
         # Punctuation mark
-        event_timer.setInterval(args.default_delay * 1.5)
+        args.event_timer.setInterval(args.default_delay * 1.5)
         return
 
     next_delay = args.default_delay
@@ -117,7 +115,7 @@ def update_label(args):
     args.label_start.setText(label_template_start.format(sword.start) +
                              label_template_mid.format(sword.mid) +
                              label_template_end.format(sword.end))
-    event_timer.setInterval(int(next_delay))
+    args.event_timer.setInterval(int(next_delay))
 
 
 def next_word(sentence_iter, word_iter):
@@ -144,12 +142,14 @@ def speed_reader_main(text_file, wpm, noun_delay=2.0, verb_delay=2.0):
     word_iter = hypenize(next(sentence_iter))
 
     app = QApplication(sys.argv)
+    event_timer = QtCore.QTimer()
     window = QtWidgets.QMainWindow()
     lmainFirst = QLabel()
     default_delay = wpm_to_ms(wpm)
     event_timer.timeout.connect(
         lambda: update_label(
-            Label_Change_Message(lmainFirst, sentence_iter, word_iter, default_delay, noun_delay, verb_delay)))
+            Label_Change_Message(lmainFirst, sentence_iter, word_iter, default_delay, noun_delay, verb_delay,
+                                 event_timer)))
     event_timer.start(1000)
 
     window.setCentralWidget(lmainFirst)
