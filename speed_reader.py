@@ -3,6 +3,7 @@ import sys
 import re
 import signal
 import itertools
+import unicodedata
 from functools import namedtuple
 
 import climate
@@ -13,6 +14,7 @@ import pyphen
 
 Labeled_Word = namedtuple('Labeled_Word', ['text', 'part_of_speech'])
 Split_Word = namedtuple('Split_Word', ['start', 'mid', 'end'])
+uncode_punctuation = ''.join([chr(i) for i in range(sys.maxunicode) if unicodedata.category(chr(i)).startswith('P')])
 
 event_timer = QtCore.QTimer()
 sentence_iter = None
@@ -29,7 +31,7 @@ def iterate_sentences(file):
     tokenizer = nltk.TweetTokenizer(reduce_len=True)
     sentences = nltk.sent_tokenize(raw_test)
     for sentence in sentences:
-        s = re.sub("[^0-9a-zA-Z \n-?!.:\u2019]+", '', sentence).strip()
+        s = re.sub("[^0-9a-zA-Z \n-?!.:" + uncode_punctuation + "]+", '', sentence).strip()
         yield map(lambda x: Labeled_Word(*x), nltk.pos_tag(tokenizer.tokenize(s)))
 
 
@@ -155,5 +157,4 @@ def speed_reader_main(text_file, wpm, noun_delay=2.0, verb_delay=2.0):
 
 if __name__ == '__main__':
     climate.call(speed_reader_main)
-    # r =Labeled_Word(*('ok','VB'))
     # IPython.embed()
