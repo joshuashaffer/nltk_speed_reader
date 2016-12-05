@@ -29,19 +29,19 @@ def iterate_sentences(file):
     sentences = nltk.sent_tokenize(raw_test)
     for sentence in sentences:
         s = re.sub("[^0-9a-zA-Z \n-?!.:\u2019]+", '', sentence).strip()
-        yield nltk.pos_tag(tokenizer.tokenize(s))
+        yield map(lambda x: Labeled_Word(*x), nltk.pos_tag(tokenizer.tokenize(s)))
 
 
 def hypenize(word_particle_list):
     for word_particle in word_particle_list:
         if len(word_particle[0]) > word_width:
-            temp_word = word_particle[0]
+            temp_word = word_particle.text
             # Split closest to the middle of the word
             idx_split = min(map(lambda x: (x[0], abs((len(temp_word) / 2.0 - x[1])), x[1]),
                                 enumerate(hypenizer.positions(temp_word))),
                             key=lambda x: x[1])[2]
-            yield temp_word[:idx_split] + '-', word_particle[1]
-            yield temp_word[idx_split:], word_particle[1]
+            yield Labeled_Word(temp_word[:idx_split] + '-', word_particle.part_of_speech)
+            yield Labeled_Word(temp_word[idx_split:], word_particle.part_of_speech)
         else:
             yield word_particle
 
@@ -77,7 +77,7 @@ def update_label(label_start, default_delay, noun_delay_multiplier, verb_delay_m
         color_mid)
     label_template_end = """ <span style='font-size:24px;font-size:20vw; font-weight:600; color:{};font-family: monospace;'>{{}}</span> """.format(
         color_end)
-    rword = re.sub('[^0-9a-zA-Z-]+', '', word[0]).strip().lower()
+    rword = re.sub('[^0-9a-zA-Z-]+', '', word.text).strip().lower()
     if rword == '':
         # Punctuation mark
         event_timer.setInterval(default_delay * 1.5)
@@ -86,11 +86,13 @@ def update_label(label_start, default_delay, noun_delay_multiplier, verb_delay_m
     next_delay = default_delay
     if len(rword) > 6:
         next_delay = (default_delay / 2.0) * (len(rword) - 6)
-    if word[1] == 'NN' or word[1] == 'NNP' or word[1] == 'PRP':
+
+    word_part = word.part_of_speech
+    if word_part == 'NN' or word_part == 'NNP' or word_part == 'PRP':
         # Nouns or preps.
         rword = rword.capitalize()
         next_delay *= noun_delay_multiplier
-    elif word[1] == 'VB':
+    elif word_part == 'VB':
         # main verbs
         rword = rword.upper()
         next_delay *= verb_delay_multiplier
@@ -150,3 +152,5 @@ def speed_reader_main(text_file, wpm, noun_delay=2.0, verb_delay=2.0):
 
 if __name__ == '__main__':
     climate.call(speed_reader_main)
+    # r =Labeled_Word(*('ok','VB'))
+    # IPython.embed()
