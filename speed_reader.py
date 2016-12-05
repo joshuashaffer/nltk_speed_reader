@@ -45,7 +45,6 @@ def iterate_sentences(file):
 
 @static_vars(hypenizer=pyphen.Pyphen(lang='en_US'))
 def hypenize(word_particle_list):
-    hypenize.hypenizer.positions('hello')
     for word_particle in word_particle_list:
         if len(word_particle[0]) > word_width:
             temp_word = word_particle.text
