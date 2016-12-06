@@ -103,7 +103,7 @@ def update_label(args: Label_Change_Message) -> None:
         args.event_timer.setInterval(args.default_delay * 1.5)
         return
 
-    next_delay = args.default_delay
+    next_delay = float(args.default_delay)
     if len(rword) > 6:
         next_delay = (args.default_delay / 2.0) * (len(rword) - 6)
 
