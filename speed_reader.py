@@ -5,7 +5,7 @@ import signal
 import itertools
 import unicodedata
 
-from typing import List, Generator, Iterator, NamedTuple
+from typing import List, Generator, Iterator, NamedTuple, Union
 import climate
 from PyQt5.QtWidgets import QApplication, QLabel
 from PyQt5 import QtCore, QtWidgets
@@ -125,7 +125,7 @@ def update_label(args: Label_Change_Message) -> None:
 
 
 def next_word(sentence_iter: Generator[Iterator[Labeled_Word], None, None],
-              word_iter: Generator[Labeled_Word, None, None]):
+              word_iter: Generator[Labeled_Word, None, None]) -> Union[Labeled_Word, None]:
     word = None
     try:
         word = next(word_iter)
