@@ -5,7 +5,7 @@ import signal
 import itertools
 import unicodedata
 
-from typing import List, Generator, Iterator, NamedTuple, Union
+from typing import List, Generator, Iterator, NamedTuple, Union, Tuple
 import climate
 from PyQt5.QtWidgets import QApplication, QLabel
 from PyQt5 import QtCore, QtWidgets
@@ -78,9 +78,12 @@ def split_word(word: str) -> Split_Word:
     word_end = str(word[split_point + 1:]).ljust(mid_width - 1).replace(' ', '&nbsp;')
     return Split_Word(word_start, word_mid, word_end)
 
-
+word_iterator_g = None
 def update_label(args: Label_Change_Message) -> None:
-    word = next_word(args.sentence_iterator, args.word_iterator)
+    global word_iterator_g
+    if word_iterator_g is None:
+        word_iterator_g = args.word_iterator
+    word, word_iterator_g = next_word(args.sentence_iterator, word_iterator_g)
     if word is None:
         # End of document.
         sys.exit(0)
@@ -125,7 +128,7 @@ def update_label(args: Label_Change_Message) -> None:
 
 
 def next_word(sentence_iter: Generator[Iterator[Labeled_Word], None, None],
-              word_iter: Generator[Labeled_Word, None, None]) -> Union[Labeled_Word, None]:
+              word_iter: Generator[Labeled_Word, None, None]) -> Tuple[Union[Labeled_Word, None],Generator[Labeled_Word, None, None]]:
     word = None
     try:
         word = next(word_iter)
@@ -135,7 +138,7 @@ def next_word(sentence_iter: Generator[Iterator[Labeled_Word], None, None],
             word = next(word_iter)
         except:
             pass
-    return word
+    return word, word_iter
 
 
 @climate.annotate(
