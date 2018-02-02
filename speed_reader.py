@@ -83,6 +83,9 @@ def update_label(args: Label_Change_Message) -> None:
     global word_iterator_g
     if word_iterator_g is None:
         word_iterator_g = args.word_iterator
+    if g_pause:
+        args.event_timer.setInterval(200)
+        return
     word, word_iterator_g = next_word(args.sentence_iterator, word_iterator_g)
     if word is None:
         # End of document.
@@ -92,13 +95,13 @@ def update_label(args: Label_Change_Message) -> None:
     color_mid = '#ae01ae'
     color_end = 'black'
     label_template_start = """
-    <span style='font-size:24px;font-size:20vw; font-weight:600; color:{}; font-family: monospace;'>{{}}</span>
+    <span style='font-size:44px;font-size:40vw; font-weight:600; color:{}; font-family: monospace;'>{{}}</span>
         """.format(color_start)
     label_template_mid = """
-    <span style='font-size:24px;font-size:20vw; font-weight:600; color:{};font-family: monospace;'>{{}}</span>""".format(
+    <span style='font-size:44px;font-size:40vw; font-weight:600; color:{};font-family: monospace;'>{{}}</span>""".format(
         color_mid)
     label_template_end = """
-    <span style='font-size:24px;font-size:20vw; font-weight:600; color:{};font-family: monospace;'>{{}}</span> """.format(
+    <span style='font-size:44px;font-size:40vw; font-weight:600; color:{};font-family: monospace;'>{{}}</span> """.format(
         color_end)
     rword = re.sub('[^0-9a-zA-Z-]+', '', word.text).strip().lower()
     if rword == '':
@@ -141,6 +144,18 @@ def next_word(sentence_iter: Generator[Iterator[Labeled_Word], None, None],
     return word, word_iter
 
 
+g_pause = False
+class OurWindow (QtWidgets.QMainWindow):
+    def __init__(self):
+        super(OurWindow,self).__init__()
+        self.default_delay =  None
+    def keyPressEvent(self, QKeyEvent):
+        global g_pause
+        if QKeyEvent.key() == QtCore.Qt.Key_Space:
+            g_pause = ~g_pause
+            print("Pause: {}".format(g_pause))
+
+
 @climate.annotate(
     text_file=('Ascii input', 'positional', None, str),
     wpm=('Words per minute', 'positional', None, int),
@@ -153,7 +168,8 @@ def speed_reader_main(text_file: str, wpm: int, noun_delay: float=2.0, verb_dela
 
     app = QApplication(sys.argv)
     event_timer = QtCore.QTimer()
-    window = QtWidgets.QMainWindow()
+    #window = QtWidgets.QMainWindow()
+    window = OurWindow()
     main_label = QLabel()
     default_delay = wpm_to_ms(wpm)
     event_timer.timeout.connect(
@@ -171,4 +187,5 @@ def speed_reader_main(text_file: str, wpm: int, noun_delay: float=2.0, verb_dela
 
 if __name__ == '__main__':
     climate.call(speed_reader_main)
-    # IPython.embed()
+    # IPython.embed()def __init__(self):
+
